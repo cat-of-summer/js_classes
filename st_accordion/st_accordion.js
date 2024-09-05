@@ -10,7 +10,7 @@ class st_accordion {
         },
         options: {
             accordion_selector: undefined,
-            hiding_type: "display",
+            hiding_type: "opacity",
             transition: undefined,
             trigger: "click",
             attribute: []
