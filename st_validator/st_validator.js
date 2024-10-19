@@ -34,6 +34,5 @@ class st_validator {
                 input.addEventListener(event, validator_f(input));
             });
         });
-  
     }
 }
