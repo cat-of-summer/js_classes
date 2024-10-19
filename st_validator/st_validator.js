@@ -1,30 +1,27 @@
 class st_validator {
 
-    static #validate_for_attribute_or_regexp_or_property(input, attribute, regexp, property) {
-        if (regexp) {
-            let regexp_obj = new RegExp(regexp);
-
-            if (!attribute && !property)
-                return regexp_obj.test(input.value);
-
-            if (attribute && property)
-                return input.hasAttribute(attribute) && regexp_obj.test(input[property]);
-
-            return (attribute ? regexp_obj.test(input.getAttribute(attribute)) : true) && (property ? regexp_obj.test(input[property]) : true);
-        } else {
-            return attribute ? input.hasAttribute(attribute) : true;
-        }
-    }
-
     constructor(param) {
 
         var validator_f = function (input) {
             if ((param.validator ? param.validator(input) : true) &&
-                st_validator.#validate_for_attribute_or_regexp_or_property(input, param.attribute, param.regexp, param.property))
-                
+                ((() => {
+                if (param.regexp) {
+                    let regexp_obj = new RegExp(param.regexp);
+        
+                    if (!param.attribute && !param.property)
+                        return regexp_obj.test(input.value);
+        
+                    if (param.attribute && param.property)
+                        return input.hasAttribute(param.attribute) && regexp_obj.test(input[param.property]);
+        
+                    return (param.attribute ? regexp_obj.test(input.getAttribute(param.attribute)) : true) && (param.property ? regexp_obj.test(input[param.property]) : true);
+                } else {
+                    return param.attribute ? input.hasAttribute(param.attribute) : true;
+                }
+            })()))
                 param.on_valid(input)
             else
-                param.on_invalid(input)
+            param.on_invalid(input)
         };
 
         let validation_events = param.events ?? [
