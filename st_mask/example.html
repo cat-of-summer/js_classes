@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.jsdelivr.net/gh/cat-of-summer/js_classes/st_validator/st_mask.js"></script>
+
+    <style>
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 100px;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+
+</head>
+<body>
+
+<form action="/" method="GET">
+    <label>
+        PHONE
+        <input type="phone" name="PHONE">
+    </label>
+    <label>
+        PASSWORD
+        <input type="text" name="EMAIL">
+    </label>
+    <button type="submit">Активация</button>
+</form>
+
+<script>
+
+    function if_full(input) { //Функция, делающая поле "валидным"
+        input.style.background = 'green';
+        input.removeAttribute('invalid');
+    }
+
+    function if_not_full(input) { //Функция, делающая поле "инвалидным"
+        input.style.background = 'red';
+        input.setAttribute('invalid', '');
+    }
+
+    new st_mask({ //Маска для телефона
+        selector: 'input[type=phone]',
+        mask: "+7 ({9}{\\d}{\\d}) {\\d}{\\d}{\\d} - {\\d}{\\d} - {\\d}{\\d}",
+        placeholder: true,
+        filler: '_',
+        full: function (input) {if_full(input)},
+        not_full: function (input) {if_not_full(input)}
+    });
+
+    new st_mask({ //Маска для текста, для примера без параметров
+        selector: 'input[type=text]',
+        mask: "{0}{[1,2,3,4,5]}{[6,7,8,9]}{7}{4}{8}{2}",
+        onload: true,
+        full: function (input) {if_full(input)},
+        not_full: function (input) {if_not_full(input)}
+    });
+
+    document.querySelector('form').addEventListener('submit', function(event) { //Валидация всей формы
+        event.preventDefault();
+
+        for (let input of this.querySelectorAll('input')) 
+            if (input.hasAttribute('invalid')) {
+                alert("Валидация не пройдена!");
+                return;
+            }
+        
+        this.submit();
+    })
+</script>
+
+</body>
+</html>

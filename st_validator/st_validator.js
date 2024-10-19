@@ -18,8 +18,6 @@ class st_validator {
 
     constructor(param) {
 
-        let all_inputs = document.querySelectorAll(param.selector);
-
         var validator_f = function (input) {
             if ((param.validator ? param.validator(input) : true) &&
                 st_validator.#validate_for_attribute_or_regexp_or_property(input, param.attribute, param.regexp, param.property))
@@ -34,7 +32,7 @@ class st_validator {
             'blur'
         ];
 
-        all_inputs.forEach(input => {
+        document.querySelectorAll(param.selector).forEach(input => {
             if (param.onload === true) validator_f(input);
 
             validation_events.forEach(event => {
