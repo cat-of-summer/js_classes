@@ -49,7 +49,13 @@ class st_mask {
                     {if (param.full) param.full(input);}
                 else
                     {if (param.not_full) param.not_full(input);}
-            })
+            });
+            input.addEventListener('blur', () => {
+                if (input_array.length == regexp.length)
+                    {if (param.full) param.full(input);}
+                else
+                    {if (param.not_full) param.not_full(input);}
+            });
         });
     }
 }

@@ -31,7 +31,7 @@ class st_validator {
                 'input',
                 'blur'
             ]).forEach(event => {
-                input.addEventListener(event, function() {
+                input.addEventListener(event, () => {
                     validator_f(input)
                 });
             });
