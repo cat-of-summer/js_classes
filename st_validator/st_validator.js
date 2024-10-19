@@ -27,12 +27,15 @@ class st_validator {
         document.querySelectorAll(param.selector).forEach(input => {
             if (param.onload === true) validator_f(input);
 
-            param.events ?? [
+            (param.events ?? [
                 'input',
                 'blur'
-            ].forEach(event => {
-                input.addEventListener(event, validator_f(input));
+            ]).forEach(event => {
+                input.addEventListener(event, function() {
+                    validator_f(input)
+                });
             });
         });
+  
     }
 }
