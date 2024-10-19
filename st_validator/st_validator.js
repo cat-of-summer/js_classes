@@ -21,21 +21,17 @@ class st_validator {
             })()))
                 param.on_valid(input)
             else
-            param.on_invalid(input)
+                param.on_invalid(input)
         };
-
-        let validation_events = param.events ?? [
-            'input',
-            'blur'
-        ];
 
         document.querySelectorAll(param.selector).forEach(input => {
             if (param.onload === true) validator_f(input);
 
-            validation_events.forEach(event => {
-                input.addEventListener(event, function() {
-                    validator_f(input)
-                })
+            param.events ?? [
+                'input',
+                'blur'
+            ].forEach(event => {
+                input.addEventListener(event, validator_f(input));
             });
         });
   
