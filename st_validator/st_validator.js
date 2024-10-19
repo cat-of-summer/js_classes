@@ -2,7 +2,7 @@ class st_validator {
 
     constructor(param) {
 
-        var validator_f = function (input) {
+        let validator_f = function (input) {
             if ((param.validator ? param.validator(input) : true) &&
                 ((() => {
                 if (param.regexp) {
