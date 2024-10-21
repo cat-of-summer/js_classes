@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-spacing: 0;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            vertical-align: top;
+        }
+        tr td:last-child {
+            padding-left: 50px;
+            position: relative;
+        }
+        pre {
+            width: 250px;
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+
+</head>
+<body>
+
+<table>
+    <tr>
+        <td>object='1'<pre object='1'></pre></td>
+        <td>object='2'<pre object='2'></pre></td>
+        <td>object='1_2'<pre object='1_2'></pre></td>
+    </tr>
+    <tr>
+        <td>object='1'<pre object='1'></pre></td>
+        <td>object='2'<pre object='2'></pre></td>
+        <td>object='2_1'<pre object='2_1'></pre></td>
+    </tr>
+    <tr>
+        <td>object='1'<pre object='1'></pre></td>
+        <td>object='2'<pre object='2'></pre></td>
+        <td>object='3'<pre object='3'></pre></td>
+        <td>object='1_2_3'<pre object='1_2_3'></pre></td>
+    </tr>
+</table>
+
+<script>
+
+
+    function object_merge(...OBJECTS) {
+        let new_object = {};
+        OBJECTS.forEach(old_object => {
+            let recursive = (field, old_object, new_object) => {
+                if (typeof old_object[field] == "object")
+                    for (let content in old_object[field]) {
+                        console.log(content);
+                        if (!new_object[field]) new_object[field] = {};
+                        recursive(content, old_object[field], new_object[field]);
+                    }
+                else
+                    new_object[field] = old_object[field];
+            }
+            for (let field in old_object)
+                recursive(field, old_object, new_object)
+        });
+        return new_object
+    }
+
+
+
+    let object_1 = {
+        a0: "start_value",
+        a1: "start_value",
+        a2: {
+            b1: "start_value",
+            b2: {
+                c1: "start_value"
+            },
+            b3: {
+                c1: {
+                    d1: "start_value"
+                }
+            }
+        }
+    }
+
+    let object_2 = {
+        a1: "new_value",
+        a2: {
+            b2: {
+                c1: "new_value",
+                c2: "new_value"
+            },
+            b4: "new_value"
+        },
+        a3: "new_value"
+    }
+
+    let object_3 = {
+        a2: {
+            b3: "end_value"
+        }
+    }
+
+    let object_1_2 = object_merge(object_1, object_2);
+    let object_2_1 = object_merge(object_2, object_1);
+    let object_1_2_3 = object_merge(object_1, object_2, object_3);
+
+    document.querySelectorAll("pre[object='1']").forEach(element => {
+        element.textContent = JSON.stringify(object_1, null, 2);
+    });
+    document.querySelectorAll("pre[object='2']").forEach(element => {
+        element.textContent = JSON.stringify(object_2, null, 2);
+    });
+    document.querySelectorAll("pre[object='3']").forEach(element => {
+        element.textContent = JSON.stringify(object_3, null, 2);
+    });
+    document.querySelectorAll("pre[object='1_2']").forEach(element => {
+        element.textContent = JSON.stringify(object_1_2, null, 2);
+    });
+    document.querySelectorAll("pre[object='2_1']").forEach(element => {
+        element.textContent = JSON.stringify(object_2_1, null, 2);
+    });
+    document.querySelectorAll("pre[object='1_2_3']").forEach(element => {
+        element.textContent = JSON.stringify(object_1_2_3, null, 2);
+    });
+
+</script>
+
+</body>
+</html>
