@@ -6,7 +6,6 @@ class st_system {
             let recursive = (field, old_object, new_object) => {
                 if (typeof old_object[field] == "object")
                     for (let content in old_object[field]) {
-                        console.log(content);
                         if (!new_object[field]) new_object[field] = {};
                         recursive(content, old_object[field], new_object[field]);
                     }
