@@ -17,7 +17,7 @@ class st_mask {
         let apply_mask = function (input_array) {
             let counter = 0;
             return mask.map(mask_char => {
-                return mask_char ?? input_array[counter++] ?? param.filler ?? '*';
+                return (counter >= input_array.length && !param.placeholder) ? '' : mask_char ?? input_array[counter++] ?? param.filler ?? '*';
             }).join('');
         }
 
@@ -31,6 +31,15 @@ class st_mask {
 
             let input_array = [];
 
+            input.addEventListener('paste', event => {
+                event.clipboardData.getData('Text').split('').forEach(char => {
+                    if ((input_array.length < regexp.length) &&
+                        (new RegExp(regexp[input_array.length]).test(char)))
+                            input_array.push(char);
+                });
+
+                input.value = apply_mask(input_array);
+            });
             input.addEventListener('input', event => {
 
                 if (event.data === null)
