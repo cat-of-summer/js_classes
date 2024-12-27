@@ -46,7 +46,7 @@
     new st_mask({ //Маска для телефона
         selector: 'input[type=phone]',
         mask: "+7 ({9}{\\d}{\\d}) {\\d}{\\d}{\\d} - {\\d}{\\d} - {\\d}{\\d}",
-        placeholder: true,
+        placeholder: false,
         filler: '_',
         full: function (input) {if_full(input)},
         not_full: function (input) {if_not_full(input)}
