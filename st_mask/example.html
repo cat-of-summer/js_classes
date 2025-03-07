@@ -22,7 +22,7 @@
 <form action="/" method="GET">
     <label>
         PHONE
-        <input type="phone" name="PHONE">
+        <input type="phone" name="PHONE" required>
     </label>
     <label>
         DATE
@@ -33,40 +33,32 @@
 
 <script>
 
-    function if_full(input) { //Функция, делающая поле "валидным"
-        input.style.background = 'green';
-        input.removeAttribute('invalid');
-    }
-
-    function if_not_full(input) { //Функция, делающая поле "инвалидным"
-        input.style.background = 'red';
-        input.setAttribute('invalid', '');
-    }
-
    new st_mask({
         selector: 'input[type=phone]',
         masks: [
-            "+{{7}} ({3*{\\d}}) {2*{\\d}} - {2*{\\d}} - {2*{\\d}}",
-            "{{8}} ({3*{\\d}}) {2*{\\d}} - {2*{\\d}} - {2*{\\d}}",
-            "+{{9}}99 ({3*{\\d}}) {2*{\\d}} - {2*{\\d}} - {2*{\\d}}",
+            "+{{7}} ({3*{\\d}}) {3*{\\d}} - {2*{\\d}} - {2*{\\d}}",
+            "{{8}} ({3*{\\d}}) {3*{\\d}} - {2*{\\d}} - {2*{\\d}}",
+            "+{{9}}99 ({3*{\\d}}) {3*{\\d}} - {2*{\\d}} - {2*{\\d}}",
         ],
         placeholder: false,
         default_filler: '_',
-        callback: function(input, mask) {
+        on_input: (input, mask) => {
+            console.log(input.dataset)
             if (mask.is_full)
-                if_full(input)
+                input.style.background = 'green';
             else
-                if_not_full(input)
-        }
+                input.style.background = 'red';
+        },
+        on_init: (input) => {console.log(input)}
     });
 
     date_masks = new st_mask({
         selector: 'input[name=DATE]',
-        callback: function(input, mask) {
+        on_input: function(input, mask) {
             if (mask.is_full)
-                if_full(input)
+                input.style.background = 'green';
             else if (mask.progress > 0)
-                if_not_full(input)
+                input.style.background = 'red';
             else 
                 input.style.background = 'white';
         }
@@ -74,22 +66,19 @@
 
     date_masks.set_masks([
         "{2*{\\d}=D} {2*{\\d}=M} {4*{\\d}=Y}",
-        "{2*{\\d}=Д} {2*{\\d}=M} {4*{\\d}=Г}",
-        "{2*{\\d}=день} {2*{\\d}=месяц} {4*{\\d}=год}",
     ]);
-    date_masks.remove_mask(1);
-    date_masks.add_mask("{2*{\\d}=день} {2*{\\d}=месяц} {4*{\\d}=год}");
 
-    document.querySelector('form').addEventListener('submit', function(event) { //Валидация всей формы
+    date_masks.remove_mask(0);
+    date_masks.add_mask("{2*{\\d}=Д} {2*{\\d}=M} {4*{\\d}=Г}");
+
+    document.querySelector('form').addEventListener('submit', function(event) {
         event.preventDefault();
 
-        for (let input of this.querySelectorAll('input')) 
-            if (input.hasAttribute('invalid')) {
+        for (let input of this.querySelectorAll('input'))
+            if (input.dataset.is_full == 'false') {
                 alert("Валидация не пройдена!");
                 return;
             }
-        
-        this.submit();
     })
 </script>
 
