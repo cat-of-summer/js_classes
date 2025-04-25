@@ -35,10 +35,14 @@ jobs:
           done
 
       - name: Commit and push minified files
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add '*.min.js'
           git commit -m "Auto-minified JS files on push to ${{ github.ref_name }}" || echo "Nothing to commit"
+
+          git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
           git push origin HEAD:${{ github.ref_name }}
