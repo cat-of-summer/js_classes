@@ -42,7 +42,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add '*.min.js'
-          git commit -m "Auto-minified JS files on push to ${{ github.ref_name }}" || echo "Nothing to commit"
+          git commit -m "Auto-minified JS file" || echo "Nothing to commit"
 
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
           git push origin HEAD:${{ github.ref_name }}
