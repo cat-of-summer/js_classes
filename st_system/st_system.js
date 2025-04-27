@@ -18,4 +18,17 @@ class st_system {
         return new_object
     }
 
+    static generate_unique_prefix(params) {
+        params = {
+            characters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            length: 16,
+    
+            ...params,
+        };
+
+        return [...Array(params.length)].map(_ =>
+            params.characters[Math.random() * params.characters.length | 0]
+          ).join('');
+    }
+
 }
