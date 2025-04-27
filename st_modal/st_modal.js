@@ -1,5 +1,7 @@
 class st_modal {
 
+    static instance = Symbol();
+
     overlay;
     container;
     target;
@@ -16,6 +18,39 @@ class st_modal {
         }
     }
 
+    static find(tag) {
+        return tag[st_modal.instance];
+    }
+
+    /*
+    params = {
+        container,
+        target,
+        overlay,
+        overlay_shading,
+        overlay_blur,
+        overlay_scroll_lock,
+        zIndex,
+        duration,
+        location,
+        position,
+        overflow,
+        close_by_out,
+        close_by_esc,
+        auto_close,
+        close_button_attribute,
+        state_attrubite,
+        allow_interrupt,
+        showing_state,
+        shown_state,
+        hiding_state,
+        hidden_state,
+        before_open,
+        on_open,
+        before_close,
+        on_close
+    }
+    */
     constructor(params) {
         params = {
             zIndex: 1000,
@@ -26,6 +61,7 @@ class st_modal {
             overlay: true,
             overlay_shading: 0.5,
             overlay_blur: '5px',
+            overlay_scroll_lock: true,
 
             // target: `<div>123</div>`,
             location: 'center center',
@@ -38,7 +74,7 @@ class st_modal {
             close_button_attribute: 'action="close"',
             
             state_attrubite: 'state',
-            can_interrupt: true,
+            allow_interrupt: false,
             showing_state: 'showing',
             shown_state: 'shown',
             hiding_state: 'hiding',
@@ -54,11 +90,13 @@ class st_modal {
         
         let modal_components_timer = [];
         let modal_components = [];
+        let body_style;
 
         if (params.overlay) {
             params.zIndex++;
-            
+
             this.overlay = document.createElement('overlay');
+            this.overlay[st_modal.instance] = this;
 
             Object.assign(this.overlay.style, {
                 position: 'fixed',
@@ -82,6 +120,7 @@ class st_modal {
         }
 
         this.container = document.createElement('container');
+        this.container[st_modal.instance] = this;
 
         Object.assign(this.container.style, {
             position: params.position,
@@ -113,6 +152,8 @@ class st_modal {
         modal_components.push(this.container);
         
         this.target = st_modal.#find_element(params.target);
+        this.target[st_modal.instance] = this;
+        this.target.style.transition =  `all ${params.duration}s`;
 
         this.container.append(this.target);
 
@@ -133,14 +174,9 @@ class st_modal {
         let toggle = (before_func, after_func, process, final, hide) => {
             before_func();
             modal_components.forEach((tag, index) => {
-                tag.style.display = 'block';
-    
                 clearTimeout(modal_components_timer[index]);
     
-                requestAnimationFrame(() => {
-                    this.#state = process;
-                    tag.setAttribute(params.state_attrubite, this.state);
-                });
+                tag.style.display = 'block';
     
                 modal_components_timer[index] = setTimeout(() => {
                     this.#state = final;
@@ -148,29 +184,66 @@ class st_modal {
                     if (hide) tag.style.display = 'none';
                     after_func();
                 }, params.duration * 1000);
+
+                requestAnimationFrame(() => {
+                    this.#state = process;
+                    tag.setAttribute(params.state_attrubite, this.state);
+                });
             });
         }
 
-        this.show = () => {
-            toggle(params.before_open, params.on_open, params.showing_state, params.shown_state, false);
+        this.show = (forced = false) => {
+            if (
+                this.#state == params.hidden_state ||
+                (params.allow_interrupt && this.#state == params.hiding_state)
+                || forced
+            ) {
+                toggle(params.before_open, params.on_open, params.showing_state, params.shown_state, false);
 
-            clearTimeout(modal_components_timer[2]);
+                if (params.overlay_scroll_lock && this.overlay) {
+                    body_style = document.body.style;
+                    body_style = {
+                        position: body_style.position,
+                        top: body_style.top,
+                        left: body_style.left,
+                        scroll_Y: window.scrollY || document.documentElement.scrollTop,
+                        scroll_X: window.scrollX || document.documentElement.scrollLeft
+                    };
 
-            if (params.auto_close > 0) 
-                modal_components_timer[2] = setTimeout(() => {
-                    this.hide(true);
-                }, params.auto_close * 1000);
+                    Object.assign(document.body.style, {
+                        position: 'fixed',
+                        top: `-${body_style.scroll_Y}px`,
+                        left:`-${body_style.scroll_X}px`,
+                    });
+                }
+
+                if (params.auto_close > 0) {
+                    clearTimeout(modal_components_timer[2]);
+
+                    modal_components_timer[2] = setTimeout(() => {
+                        this.hide(true);
+                    }, params.auto_close * 1000);
+                }
+            }
         };
+
         this.hide = (forced = false) => {
             if (
                 this.#state == params.shown_state ||
-                (params.can_interrupt && this.#state == params.showing_state)
+                (params.allow_interrupt && this.#state == params.showing_state)
                 || forced
-            ) toggle(params.before_close, params.on_close, params.hiding_state, params.hidden_state, true)
+            ) {
+                toggle(params.before_close, params.on_close, params.hiding_state, params.hidden_state, true)
+
+                if (body_style) {
+                    Object.assign(document.body.style, body_style);
+                    window.scrollTo(body_style.scroll_X, body_style.scroll_Y);
+                }
+            }
         };
 
         this.#state = params.hidden_state;
-
+                
         st_modal.#find_element(params.container).append(...modal_components);
     }
  

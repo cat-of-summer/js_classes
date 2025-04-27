@@ -7,12 +7,20 @@
     <script src="st_modal.js"></script>
 
     <style>
-        [state="hidden"], [state="hiding"] {
-            opacity: 0;
-        }
-        [state="showing"], [state="shown"] {
-            opacity: 100;
-        }
+        [state="hidden"], [state="hiding"] {opacity: 0}
+
+        [state="hidden"] .grow_animation {transform: scale(0)}
+        [state="showing"] .grow_animation {transform: scale(1.3)}
+        [state="shown"] .grow_animation {transform: scale(1)}
+        [state="hiding"] .grow_animation {transform: scale(3)}
+
+        [state="hidden"] .vertical_animation {transform: translateY(-100%)}
+        [state="shown"] .vertical_animation {transform: translateY(0)}
+        [state="hiding"] .vertical_animation {transform: translateY(-100%)}
+
+        [state="hidden"] .line_animation {transform: translateX(-100vw)}
+        [state="shown"] .line_animation {transform: translateX(0)}
+        [state="hiding"] .line_animation {transform: translateX(100vw)}
     </style>
 </head>
 <body style="height: 200vh;">
@@ -21,7 +29,7 @@
 <button action="full_modal">show full_modal</button>
 <button action="info_modal">show info_modal</button>
 
-<div id="test">
+<div id="test" class="grow_animation">
     <p>Мы используем файлы cookie. Вы можете принять или отклонить их.</p>
     <button>Принять</button>
     <button action="close">Отказать</button>
@@ -30,46 +38,53 @@
 </div>
 
 <script>
+    const cookie_modal = new st_modal({
+        target: `
+            <div class="line_animation" style='display: flex; justify-content: center;'>
+                <div style="margin-bottom: 25px; background-color: gray; width: max-content">
+                    <p>Мы используем файлы cookie. Вы можете принять или отклонить их.</p>
+                    <button action="close">Принять</button>
+                    <a href="/policy/" target="_blank">Подробнее</a>
+                </div>
+            <div>
+        `,
+        overlay: false,
+        overflow: 'hidden',
+        duration: 1,
+        close_by_out: false,
+        location: 'bottom center',
+    });
+    cookie_modal.container.style.width = '100vw';
 
-const cookie_modal = new st_modal({
-    target: `
-        <div style="margin-bottom: 25px; background-color: gray;">
-            <p>Мы используем файлы cookie. Вы можете принять или отклонить их.</p>
-            <button action="close">Принять</button>
-            <a href="/policy/" target="_blank">Подробнее</a>
+    const info_modal = new st_modal({
+        target: `
+            <div class="vertical_animation" style="margin: 25px; background-color: gray;">
+                <p>У Вас 1 непрочитанное сообщение!</p>
+            </div>
+        `,
+        overlay: false,
+        close_by_out: false,
+        location: 'top right',
+        auto_close: 5
+    });
 
-        </div>
-    `,
-    overlay: false,
-    close_by_out: false,
-    location: 'bottom center',
-});
+    const full_modal = new st_modal({
+        target: '#test',
+        overflow: 'visible'
+    });
 
-const info_modal = new st_modal({
-    target: `
-        <div style="margin: 25px; background-color: gray;">
-            <p>У Вас 1 непрочитанное сообщение!</p>
-        </div>
-    `,
-    overlay: false,
-    close_by_out: false,
-    location: 'top right',
-    auto_close: 5
-});
 
-const full_modal = new st_modal({
-    target: '#test'
-});
+    document.querySelector('button[action="cookie_modal"]').addEventListener('click', (event) => {
+        cookie_modal.show();
+    });
+    document.querySelector('button[action="full_modal"]').addEventListener('click', (event) => {
+        full_modal.show();
+    });
+    document.querySelector('button[action="info_modal"]').addEventListener('click', (event) => {
+        info_modal.show();
+    });
 
-document.querySelector('button[action="cookie_modal"]').addEventListener('click', (event) => {
-    cookie_modal.show();
-});
-document.querySelector('button[action="full_modal"]').addEventListener('click', (event) => {
-    full_modal.show();
-});
-document.querySelector('button[action="info_modal"]').addEventListener('click', (event) => {
-    info_modal.show();
-});
+    st_modal.find(cookie_modal.container).show();
 
 </script>
 
