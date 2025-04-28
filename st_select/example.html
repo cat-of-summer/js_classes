@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.jsdelivr.net/gh/cat-of-summer/js_classes@master/st_select/st_select.js"></script>
+  <script src="st_select.js"></script>
 
   <style>
     option:hover {
       background-color: red;
     }
+
     #custom-select + div[type="options_container"] {
       transition: 0.5s;
       left: 0 !important;
@@ -41,6 +42,10 @@
             'toggle_click',
             'outside_click'
         ]
+    });
+
+    new n_st_select({
+      target: 'select'
     });
 
   </script>
