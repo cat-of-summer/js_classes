@@ -22,11 +22,15 @@
 <form action="/" method="GET">
     <label>
         PHONE
-        <input type="phone" name="PHONE" required>
+        <input name="PHONE" required>
     </label>
     <label>
         DATE
-        <input type="text" name="DATE">
+        <input name="DATE">
+    </label>
+    <label>
+        PRICE
+        <input name="PRICE">
     </label>
     <button type="submit">Активация</button>
 </form>
@@ -34,7 +38,7 @@
 <script>
 
    new st_mask({
-        selector: 'input[type=phone]',
+        selector: 'input[name=PHONE]',
         masks: [
             "+{{7}} ({3*{\\d}}) {3*{\\d}} - {2*{\\d}} - {2*{\\d}}",
             "{{8}} ({3*{\\d}}) {3*{\\d}} - {2*{\\d}} - {2*{\\d}}",
@@ -48,9 +52,15 @@
                 input.style.background = 'green';
             else
                 input.style.background = 'red';
-        },
-        on_init: (input) => {console.log(input)}
+        }
     });
+
+    new st_mask({
+        selector: 'input[name=PRICE]',
+        masks: ["{3*{\\d}=0} {3*{\\d}=0} {3*{\\d}=0}"],
+        placeholder: false
+    });
+
 
     date_masks = new st_mask({
         selector: 'input[name=DATE]',
