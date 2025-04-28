@@ -144,9 +144,6 @@ class st_mask {
                     });
             });
 
-            if (typeof param.on_init === 'function')
-                param.on_init(input);
-
             $this.#inputs.push(input_object);
         });
 
@@ -154,4 +151,22 @@ class st_mask {
             $this.set_masks(param.masks);
     }
 
+}
+
+class n_st_mask {
+    constructor (params) {
+        params = {
+            masks: ["{{\\d}} {2*{\\w}=А}"], //Надо сделать бесконечность + повторения блоков, типо для чисел \d\d\d \d\d\d \d\d\d ...
+            filler: '_',
+            placeholder: true,
+            reverse_input_order: false,
+
+            on_input: () => {},
+            on_fill: () => {},
+
+            ...params
+        };
+
+
+    }
 }

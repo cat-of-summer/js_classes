@@ -59,13 +59,16 @@
     const info_modal = new st_modal({
         target: `
             <div class="vertical_animation" style="margin: 25px; background-color: gray;">
-                <p>У Вас 1 непрочитанное сообщение!</p>
+                
             </div>
         `,
         overlay: false,
         close_by_out: false,
         location: 'top right',
-        auto_close: 5
+        auto_close: 5,
+        before_open: () => {
+            info_modal.target.innerHTML = `<p>Внутренний контент!</p>`;
+        }
     });
 
     const full_modal = new st_modal({
