@@ -1,4 +1,4 @@
-class component extends HTMLElement {
+class st_component extends HTMLElement {
     static {customElements.define('st-component', this)}
 
     static #intersection_events = [
@@ -49,17 +49,17 @@ class component extends HTMLElement {
         if (state.events)
             Object.keys(state.events).forEach(e => state.events[e] = [].concat(state.events[e]));
 
-        component.#static_statements[state_name] = component.#states_composition(component.#static_statements[0], state);
+        st_component.#static_statements[state_name] = st_component.#states_composition(st_component.#static_statements[0], state);
     }
 
     static add_state_map(statements) {
         Object.entries(statements).forEach(([state_name, state]) => {
-            component.add_state(state_name, state);
+            st_component.add_state(state_name, state);
         });
     }
 
     static delete_state(state_name) {
-        delete component.#static_statements[state_name];
+        delete st_component.#static_statements[state_name];
     }
 
     #events = {};
@@ -80,7 +80,7 @@ class component extends HTMLElement {
     connectedCallback() {
         let state_name = this.getAttribute('state') ?? 0;
         let data = {
-            ...component.#static_statements[state_name],
+            ...st_component.#static_statements[state_name],
             ...Object.fromEntries(
                 Array.from(this.attributes)
                     .filter(a => a.name.startsWith('state-'))
@@ -115,7 +115,7 @@ class component extends HTMLElement {
     }
 
     addEventListener(event, handler, options) {
-        if (component.#intersection_events.includes(event) && !this.#intersection_observer) {
+        if (st_component.#intersection_events.includes(event) && !this.#intersection_observer) {
             this.#intersection_observer = new IntersectionObserver(([entry], observer) => {
                 let ratio = entry.intersectionRatio;
         
@@ -141,7 +141,7 @@ class component extends HTMLElement {
             this.#intersection_observer.observe(this);
         }
 
-        if (component.#mutation_events.includes(event) && !this.#mutation_observer) {
+        if (st_component.#mutation_events.includes(event) && !this.#mutation_observer) {
             this.#mutation_observer = new MutationObserver((mutations_list, observer) => {
 
                 this.#throw_event('mutation_list', {
@@ -163,8 +163,8 @@ class component extends HTMLElement {
             });
         }
 
-        if (component.#custom_events[event]) {
-            handler = component.#custom_events[event](this, handler);
+        if (st_component.#custom_events[event]) {
+            handler = st_component.#custom_events[event](this, handler);
         }
         
         let bound = handler.name
@@ -182,12 +182,12 @@ class component extends HTMLElement {
 
         super.removeEventListener.call(this, event, handler, options);
 
-        if (!Object.keys(this.#events).some(key => component.#intersection_events.includes(key)) && this.#intersection_observer) {
+        if (!Object.keys(this.#events).some(key => st_component.#intersection_events.includes(key)) && this.#intersection_observer) {
             this.#intersection_observer.disconnect();
             this.#intersection_observer = null;
         }
 
-        if (!Object.keys(this.#events).some(key => component.#mutation_events.includes(key)) && this.#mutation_observer) {
+        if (!Object.keys(this.#events).some(key => st_component.#mutation_events.includes(key)) && this.#mutation_observer) {
             this.#mutation_observer.disconnect();
             this.#mutation_observer = null;
         }
@@ -202,7 +202,7 @@ class component extends HTMLElement {
         if (state.events)
             Object.keys(state.events).forEach(event => state.events[event] = [].concat(state.events[event]));
 
-        this.#statements[state_name] = component.#states_composition(component.#static_statements[0], state);
+        this.#statements[state_name] = st_component.#states_composition(st_component.#static_statements[0], state);
 
         this.#throw_event('on_state_add', {
             state_name: state_name,
@@ -248,8 +248,8 @@ class component extends HTMLElement {
 
         if (data) this.add_state(key, data)
 
-        if (!this.#statements[key] && component.#static_statements[key])
-            this.add_state(key, component.#static_statements[key]);
+        if (!this.#statements[key] && st_component.#static_statements[key])
+            this.add_state(key, st_component.#static_statements[key]);
     
         if (this.#statements[key]) _set_state(key);
     }
