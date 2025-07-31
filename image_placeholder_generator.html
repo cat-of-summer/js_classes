@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Image Placeholder Generator</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; font-family:'Segoe UI', Tahoma, sans-serif; background:#e0e0e0; display:flex; justify-content:center; align-items:center; }
+    #canvas-wrapper { flex:1; display:flex; justify-content:center; align-items:center; }
+    #control-panel { position:absolute; top:20px; left:20px; background:#fafafa; border:1px solid #ccc; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.1); width:300px; overflow:hidden; z-index:1000; }
+    #panel-header { background:#ccc; color:#333; padding:10px; font-size:15px; font-weight:bold; display:flex; align-items:center; justify-content:space-between; cursor:move; user-select:none; }
+    #panel-header button, #panel-header .toggle { background:transparent; border:none; font-size:16px; cursor:pointer; margin-left:8px;transition: 0.3s; }
+    #panel-header button:hover, #panel-header .toggle:hover { color:#000; }
+    #form-fields { padding:10px 15px; background:#fdfdfd; transition:0.3s; }
+    .collapsed #form-fields { height:0; padding-top:0; padding-bottom:0; }
+    label { display:block; margin-bottom:10px; font-size:14px; color:#333; }
+    input[type="number"], input[type="color"], select, textarea { width:100%; padding:6px; border:1px solid #ccc; border-radius:3px; font-size:14px; background:#fff; box-sizing:border-box; }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:#bbb; box-shadow:0 0 4px rgba(0,0,0,0.1); }
+    textarea { resize:vertical; min-height:60px; }
+  </style>
+</head>
+<body>
+  <div id="canvas-wrapper">
+    <canvas id="placeholder"></canvas>
+  </div>
+  <div id="control-panel">
+    <div id="panel-header">
+      <span>Настройки</span>
+      <div>
+        <button id="save-btn" title="Сохранить изображение">💾</button>
+        <button class="toggle" title="Свернуть/развернуть">🔽</button>
+      </div>
+    </div>
+    <div id="form-fields">
+      <label>Width: <input type="number" id="width" placeholder="600px" /></label>
+      <label>Height: <input type="number" id="height" placeholder="400px" /></label>
+      <label>Background: <input type="color" id="bg" value="#eeeeee" /></label>
+      <label>Border color: <input type="color" id="borderColor" value="#999999" /></label>
+      <label>Border width: <input type="number" id="borderWidth" placeholder="5px" /></label>
+      <label>Text color: <input type="color" id="textColor" value="#333333" /></label>
+      <label>Font size (px): <input type="number" id="fontSize" placeholder="auto" /></label>
+      <label>Font family:
+        <select id="fontFamily">
+          <option value="monospace">monospace</option>
+          <option value="sans-serif">sans-serif</option>
+          <option value="serif">serif</option>
+          <option value="cursive">cursive</option>
+        </select>
+      </label>
+      <label>Text:<textarea id="text" placeholder="auto"></textarea></label>
+    </div>
+  </div>
+<script>
+  const canvas = document.getElementById('placeholder');
+  const ctx = canvas.getContext('2d');
+  const panel = document.getElementById('control-panel');
+  const header = document.getElementById('panel-header');
+  const toggleBtn = header.querySelector('.toggle');
+  const saveBtn = document.getElementById('save-btn');
+
+  const elems = ['width','height','bg','borderColor','borderWidth','textColor','fontSize','fontFamily','text'];
+  const form = {};
+  elems.forEach(id => form[id] = document.getElementById(id));
+
+  const defaults = {
+    width: 600, height: 400,
+    bg: '#eeeeee', borderColor: '#999999', borderWidth: 5,
+    textColor: '#333333', fontSize: null, fontFamily: 'monospace', text: null
+  };
+  const gcd = (a,b) => b ? gcd(b,a%b) : a;
+
+  function loadFromURL() {
+    const params = new URLSearchParams(location.search);
+    elems.forEach(id => {
+      if (params.has(id)) form[id].value = params.get(id);
+    });
+  }
+
+  function getValue(id) {
+    const v = form[id].value.trim();
+    return v === '' ? defaults[id] : (['width','height','borderWidth','fontSize'].includes(id) ? +v : v);
+  }
+
+  function draw() {
+    const w = getValue('width'), h = getValue('height');
+    canvas.width = w; canvas.height = h;
+    ctx.fillStyle = getValue('bg'); ctx.fillRect(0,0,w,h);
+    ctx.lineWidth = getValue('borderWidth'); ctx.strokeStyle = getValue('borderColor');
+    ctx.strokeRect(ctx.lineWidth/2,ctx.lineWidth/2,w-ctx.lineWidth,h-ctx.lineWidth);
+
+    const lines = [
+      [ctx.lineWidth, h/2, w-ctx.lineWidth, h/2],
+      [w/2, ctx.lineWidth, w/2, h-ctx.lineWidth],
+      [ctx.lineWidth, ctx.lineWidth, w-ctx.lineWidth, h-ctx.lineWidth],
+      [w-ctx.lineWidth, ctx.lineWidth, ctx.lineWidth, h-ctx.lineWidth]
+    ];
+    lines.forEach(([x1,y1,x2,y2]) => {
+      const grad = ctx.createLinearGradient(x1,y1,x2,y2);
+      grad.addColorStop(0,getValue('borderColor'));
+      grad.addColorStop(0.5,getValue('bg'));
+      grad.addColorStop(1,getValue('borderColor'));
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = getValue('borderWidth');
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+
+    const rawText = form.text.value.trim();
+    const defaultText = `${w}×${h}\n${w/gcd(w,h)}:${h/gcd(w,h)}`;
+    const displayText = rawText || defaultText;
+
+    let fontSizePx = getValue('fontSize');
+    if (form.fontSize.value.trim() === '') fontSizePx = Math.min(w,h)*0.2;
+    ctx.font = fontSizePx+'px '+getValue('fontFamily');
+    ctx.fillStyle = getValue('textColor'); ctx.textAlign='center'; ctx.textBaseline='middle';
+
+    const linesTxt = displayText.split(/\r?\n/);
+    const lineH = fontSizePx*1.1;
+    linesTxt.forEach((l,i)=>ctx.fillText(l,w/2,h/2+(i-(linesTxt.length-1)/2)*lineH));
+
+    updateURL();
+  }
+
+  function updateURL() {
+    const p = new URLSearchParams();
+    elems.forEach(id => {
+      const v = form[id].value.trim(); if(v) p.set(id,v);
+    });
+    history.replaceState(null,'','?'+p);
+  }
+
+  function saveImage() {
+    const w = getValue('width'), h = getValue('height');
+    const ratio = `${w/gcd(w,h)}-${h/gcd(w,h)}`;
+    const filename = `${w}x${h}.png`;
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  loadFromURL(); elems.forEach(id=>form[id].addEventListener('input',draw)); draw();
+
+  toggleBtn.addEventListener('click',()=>{
+    panel.classList.toggle('collapsed');
+    toggleBtn.style.transform = panel.classList.contains('collapsed')?'rotate(180deg)':'rotate(0)';
+  });
+
+  saveBtn.addEventListener('click',saveImage);
+
+  let drag=false,ox=0,oy=0;
+  header.addEventListener('mousedown',e=>{if(e.target!==toggleBtn&&e.target!==saveBtn){drag=true;ox=e.clientX-panel.offsetLeft;oy=e.clientY-panel.offsetTop;}});
+  document.addEventListener('mousemove',e=>drag&&(panel.style.left=e.clientX-ox+'px',panel.style.top=e.clientY-oy+'px'));
+  document.addEventListener('mouseup',()=>drag=false);
+
+</script>
+</body>
+</html>
