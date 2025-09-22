@@ -39,7 +39,7 @@
 
 <script>
     const cookie_modal = new st_modal({
-        target: `
+        content: `
             <div class="line_animation" style='display: flex; justify-content: center;'>
                 <div style="margin-bottom: 25px; background-color: gray; width: max-content">
                     <p>Мы используем файлы cookie. Вы можете принять или отклонить их.</p>
@@ -57,7 +57,7 @@
     cookie_modal.container.style.width = '100vw';
 
     const info_modal = new st_modal({
-        target: `
+        content: `
             <div class="vertical_animation" style="margin: 25px; background-color: gray;">
                 
             </div>
@@ -72,7 +72,7 @@
     });
 
     const full_modal = new st_modal({
-        target: '#test',
+        content: '#test',
         overflow: 'visible'
     });
 
