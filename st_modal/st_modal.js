@@ -1,60 +1,49 @@
 class st_modal {
+    static #instance = Symbol();
 
-    static instance = Symbol();
-
+    modal;
     overlay;
     container;
-    target;
+    content;
 
-    #state;
-    
+    #params = {};
+    #methods = {};
+    #state = 'hidden';
+
     static #find_element(param) {
-        if (param instanceof Element) return param;
-        
         try {
-            return document.querySelector(param) || (() => {throw new Error();})()
+            return param instanceof Element
+                ? param
+                : document.querySelector(param);
         } catch {
-            return document.body.appendChild((new DOMParser()).parseFromString(param, 'text/html').body.firstElementChild);
+            return undefined;
         }
     }
 
     static find(tag) {
-        return tag[st_modal.instance];
+        return st_modal.#find_element(tag)[st_modal.#instance];
     }
 
-    /*
-    params = {
-        container,
-        target,
-        overlay,
-        overlay_shading,
-        overlay_blur,
-        overlay_scroll_lock,
-        zIndex,
-        duration,
-        location,
-        position,
-        overflow,
-        close_by_out,
-        close_by_esc,
-        auto_close,
-        close_button_attribute,
-        state_attrubite,
-        allow_interrupt,
-        showing_state,
-        shown_state,
-        hiding_state,
-        hidden_state,
-        before_open,
-        on_open,
-        before_close,
-        on_close
+    get state() {return this.#state;}
+    get params() {return this.#params;}
+
+    clone(params) {
+        let content = this.content.cloneNode(true);
+        content.id = params.id ?? (content.id || 'modal').replace(/#+$/, '') + (params.suffix ?? '_copy');
+
+        return new st_modal({
+            ...this.#params,
+            ...this.#methods,
+            content,
+            ...params,
+            parent: this
+        });
     }
-    */
+
     constructor(params) {
         params = {
             zIndex: 1000,
-            duration: 0.3,
+            duration: 0,
 
             container: 'body',
 
@@ -63,189 +52,247 @@ class st_modal {
             overlay_blur: '5px',
             overlay_scroll_lock: true,
 
-            // target: `<div>123</div>`,
+            content: `<div></div>`,
             location: 'center center',
-            position: 'fixed',
-            overflow: 'auto',
+            trigger: null,
 
-            close_by_out: true,
+            close_by_overlay: true,
             close_by_esc: true,
             auto_close: -1,
-            close_button_attribute: 'action="close"',
-            
-            state_attrubite: 'state',
+         
             allow_interrupt: false,
-            showing_state: 'showing',
-            shown_state: 'shown',
-            hiding_state: 'hiding',
-            hidden_state: 'hidden',
 
-            before_open: () => {},
-            on_open: () => {},
-            before_close: () => {},
-            on_close: () => {},
+            before_show: () => {},
+            on_show: () => {},
+            before_hide: () => {},
+            on_hide: () => {},
+            before_init: () => {},
+            on_init: () => {},
 
             ...params
         };
+
+        let timeout;
+        let body_inline_styles;
+        let default_scroll_behavior;
+
+        for (let [key, value] of Object.entries(params))
+            if (typeof value == "function") {
+                this[key] = value.bind(this);
+
+                this.#methods[key] = value;
+            } else
+                this.#params[key] = value;
         
-        let modal_components_timer = [];
-        let modal_components = [];
-        let body_style;
+        this.before_init(this.#params);
 
-        if (params.overlay) {
-            params.zIndex++;
+        this.modal = document.createElement('modal');
+        this.modal[st_modal.#instance] = this;
 
+        Object.assign(this.modal.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            zIndex: this.#params.zIndex,
+            transition: `all ${this.#params.duration}s`,
+            pointerEvents: 'none',
+            display: 'none',
+        });
+        
+        this.modal.setAttribute('state', 'hidden');
+
+        try {
+            st_modal.#find_element(this.#params.container).append(this.modal);
+        } catch {
+            throw new Error("Неудачная попытка вставить модальное окно в указанный контейнер");
+        }
+
+        if (this.#params.overlay) {
             this.overlay = document.createElement('overlay');
-            this.overlay[st_modal.instance] = this;
+            this.overlay[st_modal.#instance] = this;
 
             Object.assign(this.overlay.style, {
-                position: 'fixed',
+                position: 'absolute',
                 top: '0',
                 left: '0',
-                width: '100%',
-                height: '100%',
-                backgroundColor: `rgba(0, 0, 0, ${params.overlay_shading})`,
-                backdropFilter: `blur(${params.overlay_blur})`,
-                zIndex: params.zIndex,
-                transition: `all ${params.duration}s`,
-                display: 'none'
+                right: '0',
+                bottom: '0',
+                backgroundColor: `rgba(0, 0, 0, ${this.#params.overlay_shading})`,
+                backdropFilter: `blur(${this.#params.overlay_blur})`,
+                zIndex: ++this.#params.zIndex,
+                transition: 'inherit',
+                pointerEvents: 'all',
             });
             
-            this.overlay.setAttribute(params.state_attrubite, params.hidden_state);
+            this.modal.append(this.overlay);
 
-            if (params.close_by_out)
-                this.overlay.addEventListener('click', () => this.hide());
-
-            modal_components.push(this.overlay);
+            if (this.#params.close_by_overlay)
+                this.overlay.addEventListener('click', () => this.hide(this.overlay));
         }
 
         this.container = document.createElement('container');
-        this.container[st_modal.instance] = this;
+        this.container[st_modal.#instance] = this;
 
         Object.assign(this.container.style, {
-            position: params.position,
-            overflow: params.overflow,
+            position: 'absolute',
+            overflow: 'hidden',
             width: 'max-content',
-            maxWidth: '100%',
             height: 'max-content',
-            zIndex: params.zIndex + 1,
-            transition: `all ${params.duration}s`,
-            display: 'none',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            zIndex: ++this.#params.zIndex,
+            transition: 'inherit',
+            pointerEvents: 'all',
 
             ...(() => {
-                return {
-                    'top left': { top: 0, left: 0 },
-                    'top center': { top: 0, left: '50%', transform: 'translateX(-50%)' },
-                    'top right': { top: 0, right: 0 },
-                    'center left': { top: '50%', left: 0, transform: 'translateY(-50%)' },
-                    'center center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
-                    'center right': { top: '50%', right: 0, transform: 'translateY(-50%)' },
-                    'bottom left': { bottom: 0, left: 0 },
-                    'bottom center': { bottom: 0, left: '50%', transform: 'translateX(-50%)' },
-                    'bottom right': { bottom: 0, right: 0 }
-                }[params.location];
+                let location = (this.#params.location || '').toLowerCase().split(/\s+/);
+
+                let style = {
+                    top: location.includes('top') ? 0 : location.includes('bottom') ? undefined : '50%',
+                    bottom: location.includes('bottom') ? 0 : undefined,
+                    left: location.includes('left') ? 0 : location.includes('right') ? undefined : '50%',
+                    right: location.includes('right') ? 0 : undefined,
+                };
+
+                let tx = style.left === '50%' ? 'translateX(-50%)' : '';
+                let ty = style.top === '50%' ? 'translateY(-50%)' : '';
+
+                if (tx || ty) style.transform = `${tx} ${ty}`.trim();
+
+                return style;
             })()
         });
 
-        this.container.setAttribute(params.state_attrubite, params.hidden_state);
+        this.modal.append(this.container);
 
-        modal_components.push(this.container);
-        
-        this.target = st_modal.#find_element(params.target);
-        this.target[st_modal.instance] = this;
-        this.target.style.transition =  `all ${params.duration}s`;
-
-        this.container.append(this.target);
-
-        this.target.querySelectorAll(`[${params.close_button_attribute}]`).forEach(close_button => {
-            close_button.addEventListener('click', () => this.hide());
-        });
-        
-        if (params.close_by_out)
-            document.addEventListener('click', (event) => {
-                if (!this.container.contains(event.target)) this.hide();
-            });
-
-        if (params.close_by_esc)
-            document.addEventListener('keydown', e => {
-                if ((e.code === 'Escape' || e.keyCode === 27)) this.hide();
-            });
-
-        let toggle = (before_func, after_func, process, final, hide) => {
-            before_func();
-            modal_components.forEach((tag, index) => {
-                clearTimeout(modal_components_timer[index]);
-    
-                tag.style.display = 'block';
-    
-                modal_components_timer[index] = setTimeout(() => {
-                    this.#state = final;
-                    tag.setAttribute(params.state_attrubite, this.state);
-                    if (hide) tag.style.display = 'none';
-                    after_func();
-                }, params.duration * 1000);
-
-                requestAnimationFrame(() => {
-                    this.#state = process;
-                    tag.setAttribute(params.state_attrubite, this.state);
-                });
-            });
+        try {
+            this.content = st_modal.#find_element(this.#params.content) ??
+                (new DOMParser()).parseFromString(this.#params.content, 'text/html').body.firstElementChild;
+        } catch {
+            throw new Error("Неудачная попытка вставить переданный контент в модальное окно");
         }
 
-        this.show = (forced = false) => {
-            if (
-                this.#state == params.hidden_state ||
-                (params.allow_interrupt && this.#state == params.hiding_state)
-                || forced
-            ) {
-                toggle(params.before_open, params.on_open, params.showing_state, params.shown_state, false);
+        this.container.append(this.content);
+        this.content[st_modal.#instance] = this;
+        this.content.style.transition = 'inherit';
 
-                if (params.overlay_scroll_lock && this.overlay) {
-                    body_style = document.body.style;
-                    body_style = {
-                        position: body_style.position,
-                        top: body_style.top,
-                        left: body_style.left,
+        this.content.querySelectorAll(`[action="close"]`).forEach(close_button => {
+            close_button.addEventListener('click', () => this.hide());
+        });
+
+        let toggle = (params) => {
+            params.before_func(params.data);
+            
+            clearTimeout(timeout);
+
+            this.modal.style.display = 'block';
+
+            requestAnimationFrame(() => {
+                this.#state = params.process;
+                this.modal.setAttribute('state', this.#state);
+
+                requestAnimationFrame(() => {
+                    timeout = setTimeout(() => {
+                        this.#state = params.final;
+                        this.modal.setAttribute('state', this.#state);
+
+                        if (params.hide) this.modal.style.display = 'none';
+
+                        params.after_func(params.data);
+
+                    }, this.#params.duration * 1000);
+                });
+            });
+
+        }
+
+        this.show = (data = null) => {
+            if (
+                this.#state == 'hidden' ||
+                (this.#params.allow_interrupt && this.#state == 'hiding')
+            ) {
+                toggle({
+                    before_func: this.before_show,
+                    after_func: this.on_show,
+                    process: 'showing',
+                    final: 'shown',
+                    hide: false,
+                    data
+                });
+
+                if (this.#params.overlay_scroll_lock && this.overlay) {
+                    default_scroll_behavior = document.documentElement.style.scrollBehavior;
+
+                    body_inline_styles = document.body.style;
+                    body_inline_styles = {
+                        position: body_inline_styles.position,
+                        top: body_inline_styles.top,
+                        left: body_inline_styles.left,
+                        width: body_inline_styles.width,
                         scroll_Y: window.scrollY || document.documentElement.scrollTop,
                         scroll_X: window.scrollX || document.documentElement.scrollLeft
                     };
 
+                    document.documentElement.style.scrollBehavior = 'unset';
                     Object.assign(document.body.style, {
                         position: 'fixed',
-                        top: `-${body_style.scroll_Y}px`,
-                        left:`-${body_style.scroll_X}px`,
+                        width: '100vw',
+                        top: `-${body_inline_styles.scroll_Y}px`,
+                        left:`-${body_inline_styles.scroll_X}px`,
                     });
                 }
 
-                if (params.auto_close > 0) {
-                    clearTimeout(modal_components_timer[2]);
+                if (this.#params.auto_close > 0) {
+                    clearTimeout(timeout);
 
-                    modal_components_timer[2] = setTimeout(() => {
-                        this.hide(true);
-                    }, params.auto_close * 1000);
+                    timeout = setTimeout(() => {
+                        this.hide();
+                    }, this.#params.auto_close * 1000);
                 }
             }
         };
 
-        this.hide = (forced = false) => {
+        this.hide = (data = null) => {
             if (
-                this.#state == params.shown_state ||
-                (params.allow_interrupt && this.#state == params.showing_state)
-                || forced
+                this.#state == 'shown' ||
+                (this.#params.allow_interrupt && this.#state == 'showing')
             ) {
-                toggle(params.before_close, params.on_close, params.hiding_state, params.hidden_state, true)
+                toggle({
+                    before_func: this.before_hide,
+                    after_func: this.on_hide,
+                    process: 'hiding',
+                    final: 'hidden',
+                    hide: true,
+                    data
+                });
 
-                if (body_style) {
-                    Object.assign(document.body.style, body_style);
-                    window.scrollTo(body_style.scroll_X, body_style.scroll_Y);
-                }
+                clearTimeout(timeout);
+
+                timeout = setTimeout(() => {
+                    if (body_inline_styles) {
+                        Object.assign(document.body.style, body_inline_styles);
+                        window.scrollTo(body_inline_styles.scroll_X, body_inline_styles.scroll_Y);
+                    }
+
+                    if (default_scroll_behavior)
+                        document.documentElement.style.scrollBehavior = default_scroll_behavior;
+                    
+                }, this.#params.duration * 1000);
             }
         };
 
-        this.#state = params.hidden_state;
-                
-        st_modal.#find_element(params.container).append(...modal_components);
+        if (this.#params.close_by_esc)
+            document.addEventListener('keydown', e => {
+                if ((e.code === 'Escape' || e.keyCode === 27)) this.hide(e);
+            });
+
+        if (this.#params.trigger)
+            document.querySelectorAll(this.#params.trigger).forEach(trigger => {
+                trigger.addEventListener('click', () => this.show(trigger));
+            });
+        
+        this.on_init(this.#params);
     }
- 
-    get state() {return this.#state;}
 }
