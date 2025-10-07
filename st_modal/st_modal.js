@@ -276,7 +276,7 @@ class st_modal {
                         window.scrollTo(body_inline_styles.scroll_X, body_inline_styles.scroll_Y);
                     }
 
-                    if (default_scroll_behavior)
+                    if (default_scroll_behavior != null)
                         document.documentElement.style.scrollBehavior = default_scroll_behavior;
                     
                 }, this.#params.duration * 1000);
