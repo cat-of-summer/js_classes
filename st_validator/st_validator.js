@@ -1,7 +1,7 @@
 class st_validator {
 
 	#validator = null;
-    #targets = null;
+    #selector = null;
 
     constructor(param) {
 
@@ -29,11 +29,14 @@ class st_validator {
             if (param.after_check) param.after_check(input);
         };
 
-        this.#targets = document.querySelectorAll(param.selector);
+        this.#selector = param.selector;
 
-        if (param.onload === true) this.apply;
+        if (typeof param.onload == 'function')
+            param.onload(this.#selector);
+        else if (param.onload === true) 
+            this.apply();
 
-        this.#targets.forEach(input => {
+        document.querySelectorAll(this.#selector).forEach(input => {
             (param.events ?? [
                 'input',
                 'blur'
@@ -45,8 +48,8 @@ class st_validator {
         });
     }
 
-	apply(selector = null) {
-        (selector ? document.querySelectorAll(selector) : this.#targets)
+	apply(selector) {
+        (document.querySelectorAll(selector ?? this.#selector))
             .forEach(this.#validator, this);
     }
 }
